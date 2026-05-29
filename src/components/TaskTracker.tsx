@@ -5,7 +5,8 @@
 
 import React, { useState } from 'react';
 import { Task } from '../types';
-import { CheckCircle2, Circle, AlertCircle, Plus, Sparkles, Filter, Trash2 } from 'lucide-react';
+import { CheckCircle2, Circle, AlertCircle, Plus, Sparkles, Filter, Trash2, ChevronDown, ChevronUp, Copy, Check, ExternalLink, BookOpen } from 'lucide-react';
+import { HOW_TO_STEPS_REGISTRY } from '../data/howToSteps';
 
 interface TaskTrackerProps {
   tasks: Task[];
@@ -17,6 +18,19 @@ interface TaskTrackerProps {
 export default function TaskTracker({ tasks, onToggleStatus, onAddTask, onDeleteTask }: TaskTrackerProps) {
   const [phaseFilter, setPhaseFilter] = useState<'all' | 1 | 2>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  
+  // Custom interactive documentation states
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const [copySuccessId, setCopySuccessId] = useState<string | null>(null);
+
+  const handleCopyCode = (text: string, taskId: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopySuccessId(taskId);
+      setTimeout(() => setCopySuccessId(null), 2000);
+    }).catch(err => {
+      console.error('Could not copy text to clipboard: ', err);
+    });
+  };
   
   // States for adding a new task
   const [title, setTitle] = useState('');
@@ -211,59 +225,158 @@ export default function TaskTracker({ tasks, onToggleStatus, onAddTask, onDelete
           filteredTasks.map((task) => {
             const statusConfig = statusIcons[task.status];
             const StatusIcon = statusConfig.icon;
+            const howToData = HOW_TO_STEPS_REGISTRY[task.id];
+            const isExpanded = expandedTaskId === task.id;
             
             return (
               <div
                 key={task.id}
-                className={`group flex items-start gap-4 rounded-xl border border-slate-150 p-4 shadow-sm transition-all hover:bg-slate-50/50 ${statusConfig.bg}`}
+                onClick={() => {
+                  if (howToData) {
+                    setExpandedTaskId(isExpanded ? null : task.id);
+                  }
+                }}
+                className={`group flex flex-col rounded-xl border border-slate-150 p-4 shadow-sm transition-all hover:bg-slate-50/50 ${statusConfig.bg} ${
+                  howToData ? 'cursor-pointer select-none' : ''
+                } ${isExpanded ? 'ring-1 ring-blue-500/40 shadow-md bg-stone-50/10' : ''}`}
               >
-                {/* Status Toggle Button */}
-                <button
-                  onClick={() => {
-                    const next: Record<'todo' | 'in_progress' | 'done', 'todo' | 'in_progress' | 'done'> = {
-                      todo: 'in_progress',
-                      in_progress: 'done',
-                      done: 'todo',
-                    };
-                    onToggleStatus(task.id, next[task.status]);
-                  }}
-                  className={`mt-0.5 transition-colors focus:outline-none ${statusConfig.color}`}
-                  title={`Status: ${task.status}. Click to advance.`}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <StatusIcon className="h-5 w-5" />
-                </button>
+                <div className="flex items-start gap-4">
+                  {/* Status Toggle Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const next: Record<'todo' | 'in_progress' | 'done', 'todo' | 'in_progress' | 'done'> = {
+                        todo: 'in_progress',
+                        in_progress: 'done',
+                        done: 'todo',
+                      };
+                      onToggleStatus(task.id, next[task.status]);
+                    }}
+                    className={`mt-0.5 transition-colors focus:outline-none ${statusConfig.color}`}
+                    title={`Status: ${task.status}. Click to advance.`}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <StatusIcon className="h-5 w-5 col-auto shrink-0" />
+                  </button>
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-                      {task.id}
-                    </span>
-                    <h3 className={`text-xs font-bold text-slate-900 ${task.status === 'done' ? 'line-through text-slate-400 font-normal' : ''}`}>
-                      {task.title}
-                    </h3>
-                    <span className="inline-flex items-center rounded bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-slate-600 uppercase tracking-wider">
-                      {task.category}
-                    </span>
-                    <span className={`inline-flex items-center rounded px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
-                      task.phase === 1 ? 'bg-orange-50 text-orange-700 border border-orange-100' : 'bg-purple-50 text-purple-700 border border-purple-100'
-                    }`}>
-                      Phase {task.phase}
-                    </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded shrink-0">
+                        {task.id}
+                      </span>
+                      <h3 className={`text-xs font-bold text-slate-900 ${task.status === 'done' ? 'line-through text-slate-400 font-normal' : ''}`}>
+                        {task.title}
+                      </h3>
+                      <span className="inline-flex items-center rounded bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-slate-600 uppercase tracking-wider shrink-0">
+                        {task.category}
+                      </span>
+                      <span className={`inline-flex items-center rounded px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider shrink-0 ${
+                        task.phase === 1 ? 'bg-orange-50 text-orange-700 border border-orange-100' : 'bg-purple-50 text-purple-700 border border-purple-100'
+                      }`}>
+                        Phase {task.phase}
+                      </span>
+                      {howToData && (
+                        <span className="inline-flex items-center rounded bg-blue-50 text-blue-700 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider shrink-0 border border-blue-100 animate-pulse">
+                          Blueprint Ready
+                        </span>
+                      )}
+                    </div>
+                    <p className={`mt-2 text-xs leading-relaxed text-slate-500 ${task.status === 'done' ? 'text-slate-300' : ''}`}>
+                      {task.description}
+                    </p>
                   </div>
-                  <p className={`mt-2 text-xs leading-relaxed text-slate-500 ${task.status === 'done' ? 'text-slate-300' : ''}`}>
-                    {task.description}
-                  </p>
+
+                  {/* Right side controls (Arrows & Delete) */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {howToData && (
+                      <div className="text-slate-400 group-hover:text-slate-600 p-1 rounded transition-colors bg-slate-100/50 group-hover:bg-slate-100">
+                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </div>
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteTask(task.id);
+                      }}
+                      className="rounded p-1.5 text-slate-400 opacity-0 transition-opacity hover:bg-slate-100 hover:text-red-600 group-hover:opacity-100"
+                      title="Remove this task"
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
 
-                <button
-                  onClick={() => onDeleteTask(task.id)}
-                  className="rounded p-1.5 text-slate-400 opacity-0 transition-opacity hover:bg-slate-100 hover:text-red-600 group-hover:opacity-100"
-                  title="Remove this task"
-                  style={{ cursor: 'pointer' }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                {/* Collapsible How-To implementation section */}
+                {isExpanded && howToData && (
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="mt-4 pt-4 border-t border-slate-200/80 space-y-4 animate-fadeIn"
+                  >
+                    {/* Header */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="h-4 w-4 text-blue-600 shrink-0" />
+                        <span className="text-[10px] font-bold text-slate-800 uppercase tracking-wider">
+                          🔧 Step-by-Step Implementation Blueprint
+                        </span>
+                      </div>
+                      {howToData.docUrl && (
+                        <a
+                          href={howToData.docUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[9px] font-bold text-blue-600 hover:text-blue-800 hover:underline transition-colors uppercase tracking-wider"
+                        >
+                          {howToData.docTitle || "Official Resource"}
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Sequential Steps */}
+                    <ol className="list-decimal list-inside space-y-2 text-xs text-slate-600 bg-white p-3 rounded-lg border border-slate-100 shadow-2xs">
+                      {howToData.steps.map((step, idx) => (
+                        <li key={idx} className="leading-relaxed">
+                          <span className="text-slate-700 font-sans">{step}</span>
+                        </li>
+                      ))}
+                    </ol>
+
+                    {/* Integrated Interactive Code Asset block */}
+                    {howToData.codeSnippet && (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">
+                            {howToData.codeLanguage ? `${howToData.codeLanguage.toUpperCase()} CODE ASSET` : 'CODE TEMPLATE'}
+                          </span>
+                          <button
+                            onClick={() => handleCopyCode(howToData.codeSnippet, task.id)}
+                            className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 hover:text-emerald-800 transition-colors focus:outline-none bg-emerald-50 hover:bg-emerald-100/80 px-2 py-0.5 rounded border border-emerald-100"
+                            style={{ cursor: 'pointer' }}
+                          >
+                            {copySuccessId === task.id ? (
+                              <>
+                                <Check className="h-3 w-3" />
+                                Copied!
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-3 w-3" />
+                                Copy Snippet
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        <div className="relative rounded-lg border border-slate-200 bg-slate-950 p-3 shadow-xs">
+                          <pre className="font-mono text-[10px] text-slate-200 overflow-x-auto whitespace-pre leading-relaxed scrollbar-thin scrollbar-thumb-slate-850">
+                            <code>{howToData.codeSnippet}</code>
+                          </pre>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })
