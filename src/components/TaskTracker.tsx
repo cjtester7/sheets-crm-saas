@@ -23,6 +23,25 @@ export default function TaskTracker({ tasks, onToggleStatus, onAddTask, onDelete
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   const [copySuccessId, setCopySuccessId] = useState<string | null>(null);
 
+  // Persistent sub-task completion state
+  const [subtaskCompletion, setSubtaskCompletion] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem('portfolio_subtask_completion');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      return {};
+    }
+  });
+
+  const handleToggleSubtask = (taskId: string, stepIdx: number) => {
+    const key = `${taskId}::${stepIdx}`;
+    setSubtaskCompletion(prev => {
+      const next = { ...prev, [key]: !prev[key] };
+      localStorage.setItem('portfolio_subtask_completion', JSON.stringify(next));
+      return next;
+    });
+  };
+
   const handleCopyCode = (text: string, taskId: string) => {
     navigator.clipboard.writeText(text).then(() => {
       setCopySuccessId(taskId);
@@ -334,14 +353,40 @@ export default function TaskTracker({ tasks, onToggleStatus, onAddTask, onDelete
                       )}
                     </div>
 
-                    {/* Sequential Steps */}
-                    <ol className="list-decimal list-inside space-y-2 text-xs text-slate-600 bg-white p-3 rounded-lg border border-slate-100 shadow-2xs">
-                      {howToData.steps.map((step, idx) => (
-                        <li key={idx} className="leading-relaxed">
-                          <span className="text-slate-700 font-sans">{step}</span>
-                        </li>
-                      ))}
-                    </ol>
+                    {/* Sequential Steps with Interactive Checkboxes */}
+                    <div className="space-y-1.5 bg-white p-2.5 rounded-lg border border-slate-100 shadow-2xs">
+                      {howToData.steps.map((step, idx) => {
+                        const stepKey = `${task.id}::${idx}`;
+                        const isCompleted = !!subtaskCompletion[stepKey];
+                        return (
+                          <div
+                            key={idx}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleSubtask(task.id, idx);
+                            }}
+                            className={`flex items-start gap-3 p-2 rounded-md transition-all hover:bg-slate-50 cursor-pointer ${
+                              isCompleted ? 'bg-slate-50/50 opacity-80' : ''
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isCompleted}
+                              onChange={() => handleToggleSubtask(task.id, idx)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                              style={{ accentColor: '#2563eb' }}
+                            />
+                            <div className="text-xs leading-relaxed flex-1">
+                              <span className="font-bold text-slate-400 mr-2">{idx + 1}.</span>
+                              <span className={`font-sans text-slate-700 transition-colors ${isCompleted ? 'line-through text-slate-400' : ''}`}>
+                                {step}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
 
                     {/* Integrated Interactive Code Asset block */}
                     {howToData.codeSnippet && (
