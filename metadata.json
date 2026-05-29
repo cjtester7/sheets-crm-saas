@@ -1,0 +1,6 @@
+{
+  "name": "Software Portfolio Architect & Implementation Tracker",
+  "description": "An interactive tracker for SaaS development milestones, error logging, code versioning, and generating portfolio-ready developer & recruiter documentation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
