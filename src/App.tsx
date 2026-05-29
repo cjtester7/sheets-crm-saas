@@ -11,31 +11,40 @@ import BugTracker from './components/BugTracker';
 import PortfolioDocs from './components/PortfolioDocs';
 import ArchitectureVisualizer from './components/ArchitectureVisualizer';
 import { Task, VersionedFile, BugLog } from './types';
-import { DEFAULT_TASKS, DEFAULT_FILES, DEFAULT_BUGS } from './data';
-import { Sparkles, Calendar, CheckSquare, Bug, Award, BookOpen } from 'lucide-react';
+import { DEFAULT_TASKS, DEFAULT_FILES, DEFAULT_BUGS, BOB_DIAMOND_TASKS, BOB_DIAMOND_FILES, BOB_DIAMOND_BUGS } from './data';
+import { Sparkles, Calendar, CheckSquare, Bug, Award, BookOpen, AlertCircle, RefreshCcw } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('roadmap');
 
-  // Suggested project names in github & netlify
-  const githubName = 'sheets-crm-saas-evolution';
-  const netlifyName = 'saas-crm-evolution-tracker';
+  const [activeProject, setActiveProject] = useState<'default' | 'bob_diamond'>(() => {
+    return (localStorage.getItem('portfolio_active_project') as any) || 'default';
+  });
+
+  // Suggested project names in github & netlify conditionally mapped
+  const githubName = activeProject === 'bob_diamond' ? 'bob-diamond-overages-rag' : 'sheets-crm-saas-evolution';
+  const netlifyName = activeProject === 'bob_diamond' ? 'ask-bob-overages-crm' : 'saas-crm-evolution-tracker';
 
   // Persistence States
   const [tasks, setTasks] = useState<Task[]>(() => {
     const saved = localStorage.getItem('portfolio_tasks');
-    return saved ? JSON.parse(saved) : DEFAULT_TASKS;
+    return saved ? JSON.parse(saved) : (activeProject === 'bob_diamond' ? BOB_DIAMOND_TASKS : DEFAULT_TASKS);
   });
 
   const [files, setFiles] = useState<VersionedFile[]>(() => {
     const saved = localStorage.getItem('portfolio_files');
-    return saved ? JSON.parse(saved) : DEFAULT_FILES;
+    return saved ? JSON.parse(saved) : (activeProject === 'bob_diamond' ? BOB_DIAMOND_FILES : DEFAULT_FILES);
   });
 
   const [bugs, setBugs] = useState<BugLog[]>(() => {
     const saved = localStorage.getItem('portfolio_bugs');
-    return saved ? JSON.parse(saved) : DEFAULT_BUGS;
+    return saved ? JSON.parse(saved) : (activeProject === 'bob_diamond' ? BOB_DIAMOND_BUGS : DEFAULT_BUGS);
   });
+
+  // Save active project configuration
+  useEffect(() => {
+    localStorage.setItem('portfolio_active_project', activeProject);
+  }, [activeProject]);
 
   // Keep state synced on mutate
   useEffect(() => {
@@ -49,6 +58,20 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('portfolio_bugs', JSON.stringify(bugs));
   }, [bugs]);
+
+  // Dynamic project trigger template swapper
+  const handleSwitchProject = (projectType: 'default' | 'bob_diamond') => {
+    setActiveProject(projectType);
+    if (projectType === 'bob_diamond') {
+      setTasks(BOB_DIAMOND_TASKS);
+      setFiles(BOB_DIAMOND_FILES);
+      setBugs(BOB_DIAMOND_BUGS);
+    } else {
+      setTasks(DEFAULT_TASKS);
+      setFiles(DEFAULT_FILES);
+      setBugs(DEFAULT_BUGS);
+    }
+  };
 
   // Handlers
   const handleToggleTaskStatus = (id: string, status: 'todo' | 'in_progress' | 'done') => {
@@ -100,6 +123,48 @@ export default function App() {
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-6">
         
+        {/* Dynamic Project Blueprint Active Selector Banner */}
+        <div className="mb-6 rounded-xl border border-slate-200 bg-blue-50/20 p-4 shadow-sm flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex gap-3">
+            <div className="rounded bg-blue-600 p-2 text-white shrink-0 h-9 w-9 flex items-center justify-center">
+              <Sparkles className="h-5 w-5 text-blue-100" />
+            </div>
+            <div>
+              <h2 className="text-xs font-bold text-slate-900 uppercase tracking-widest flex items-center gap-1.5">
+                ACTIVE BLUEPRINT BLUEPRINT REGISTRY
+              </h2>
+              <p className="mt-0.5 text-xs text-slate-600 leading-relaxed font-sans">
+                Active Scope Tracker: <span className="font-bold text-blue-700">{activeProject === 'bob_diamond' ? "Bob Diamond AI Tax Overage RAG Ecosystem" : "Generic SaaS Deployment Suite"}</span>. Toggle below to apply structural pre-loads mapped from PDF specifications.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2 shrink-0">
+            <button
+              onClick={() => handleSwitchProject('default')}
+              className={`rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all border ${
+                activeProject === 'default'
+                  ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
+                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+              }`}
+              style={{ cursor: 'pointer' }}
+            >
+              Standard SaaS
+            </button>
+            <button
+              onClick={() => handleSwitchProject('bob_diamond')}
+              className={`rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all border flex items-center gap-1.5 ${
+                activeProject === 'bob_diamond'
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-500/10'
+                  : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'
+              }`}
+              style={{ cursor: 'pointer' }}
+            >
+              <RefreshCcw className="h-3 w-3" />
+              Bob Diamond AI RAG
+            </button>
+          </div>
+        </div>
+
         {/* Quick Dashboard Overlook Banner */}
         <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">
           
